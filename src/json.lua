@@ -23,22 +23,34 @@
 
 local json = {}
 
-local impl = {}
+json.Object = {}
+json.Array = {}
 
-local digits = {["0"] = 0, ["1"] = 1, ["2"] = 2, ["3"] = 3, ["4"] = 4,
-                ["5"] = 5, ["6"] = 6, ["7"] = 7, ["8"] = 8, ["9"] = 9}
+local impl = {}
 
 local escapes = {["\""] = "\"", ["\\"] = "\\", ["/"] = "/", b = "\b",
                  f = "\f", n = "\n", r = "\r", t = "\t"}
 
-local whitespace = {[" "] = true, ["\n"] = true, ["\r"] = true,
-                    ["\t"] = true}
+local number_chars = "-0123456789.eE"
+local whitespace_chars = " \n\r\t"
+
+function is_substring(sub, str)
+    return string.find(str, sub, 1, true) ~= nil
+end
+
+function impl.is_number_char(char)
+    return is_substring(char, number_chars)
+end
+
+function impl.is_whitespace_char(char)
+    return is_substring(char, whitespace_chars)
+end
 
 function impl.decode(str, pos)
     local char = string.sub(str, pos, pos)
     if char == "\"" then
         return impl.decode_string(str, pos)
-    elseif char == "-" or digits[char] then
+    elseif impl.is_number_char(char) then
         return impl.decode_number(str, pos)
     elseif char == "{" then
         return impl.decode_object(str, pos)
@@ -50,14 +62,35 @@ function impl.decode(str, pos)
         return impl.decode_value(str, pos, "false", false)
     elseif char == "n" then
         return impl.decode_value(str, pos, "null", json.null)
+    else
+        impl.decode_error(str, pos)
     end
 end
 
-function impl.decode_whitespace(str, pos)
-    while whitespace[string.sub(str, pos, pos)] do
-        pos = pos + 1
+function impl.skip_whitespace(str, pos)
+    local len = #str
+    while pos <= len do
+        local char = string.sub(str, pos, pos)
+        if char == "/" then
+            pos = impl.skip_comment(str, pos)
+        elseif impl.is_whitespace_char(char) then
+            pos = pos + 1
+        else
+            break
+        end
     end
     return pos
+end
+
+function impl.skip_comment(str, pos)
+    local char = string.sub(str, pos + 1, pos + 1)
+    if char == "/" then
+        return (string.find(str, "\n", pos + 2, true) or #str) + 1
+    elseif char == "*" then
+        return string.find(str, "*/", pos + 2, true) + 2
+    else
+        impl.decode_error(str, pos)
+    end
 end
 
 function impl.decode_string(str, pos)
@@ -86,6 +119,24 @@ function impl.decode_string(str, pos)
     return table.concat(buffer, ""), pos + 1
 end
 
+function impl.decode_number(str, pos)
+    local stop = pos + 1
+    while stop <= #str and impl.is_number_char(string.sub(str, stop, stop))  do
+        stop = stop + 1
+    end
+    return tonumber(string.sub(str, pos, stop - 1)), stop
+end
+
+function impl.decode_object(str, pos)
+    local obj = {}
+    return obj, pos + 2
+end
+
+function impl.decode_array(str, pos)
+    local arr = {}
+    return arr, pos + 2
+end
+
 function impl.decode_value(str, pos, pattern, value)
     if string.sub(str, pos, pos + #pattern - 1) ~= pattern then
         impl.decode_error(str, pos)
@@ -104,7 +155,9 @@ function json.array(arr)
 end
 
 function json.decode(str)
-    local value, pos = impl.decode(str, 1)
+    local pos = impl.skip_whitespace(str, 1)
+    local value, pos = impl.decode(str, pos)
+    local pos = impl.skip_whitespace(str, pos)
     if pos <= #str then
         impl.decode_error(str, pos)
     end
