@@ -13,11 +13,10 @@ local function test_parse_array()
     assert(arr[3] == 5)
 end
 
-local function test_parse_string()
-    assert(json.parse("\"\"") == "")
-    assert(json.parse("\"The Dude abides.\"") == "The Dude abides.")
-    assert(json.parse("\"\\\"\\\\\\/\"") == "\"\\/")
-    assert(json.parse("\"\\b\\f\\n\\r\\t\"") == "\b\f\n\r\t")
+local function test_parse_constant()
+    assert(json.parse("true") == true)
+    assert(json.parse("false") == false)
+    assert(json.null and json.parse("null") == json.null)
 end
 
 local function test_parse_number()
@@ -37,16 +36,11 @@ local function test_parse_object()
     assert(obj.abides == json.null)
 end
 
-local function test_parse_true()
-    assert(json.parse("true") == true)
-end
-
-local function test_parse_false()
-    assert(json.parse("false") == false)
-end
-
-local function test_parse_null()
-    assert(json.null and json.parse("null") == json.null)
+local function test_parse_string()
+    assert(json.parse("\"\"") == "")
+    assert(json.parse("\"The Dude abides.\"") == "The Dude abides.")
+    assert(json.parse("\"\\\"\\\\\\/\"") == "\"\\/")
+    assert(json.parse("\"\\b\\f\\n\\r\\t\"") == "\b\f\n\r\t")
 end
 
 local function test_skip_comment()
@@ -62,15 +56,32 @@ local function test_skip_comment()
                        ]]) == 42)
 end
 
+local function test_format_array()
+    assert(json.format({2, 3, 5}) == "[2, 3, 5]")
+end
+
+local function test_format_object()
+    assert(json.format({the = 2, dude = 3, abides = 5}) ==
+           '{"abides": 5, "dude": 3, "the": 2}')
+end
+
+local function test_format_constant()
+    assert(json.format(true) == "true")
+    assert(json.format(false) == "false")
+    assert(json.format(nil) == "null")
+    assert(json.format(json.null) == "null")
+end
+
 local function test()
     test_parse_array()
-    test_parse_false()
-    test_parse_null()
+    test_parse_constant()
     test_parse_number()
     test_parse_object()
     test_parse_string()
-    test_parse_true()
     test_skip_comment()
+    test_format_array()
+    test_format_constant()
+    test_format_object()
 end
 
 test()

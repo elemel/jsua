@@ -210,6 +210,56 @@ function impl.parse_constant(peek_char, read_char, name, value)
     return value
 end
 
+function impl.format_value(value, write_string)
+    local t = type(value)
+    if t == "nil" then
+        write_string("null")
+    elseif t == "boolean" or t == "number" then
+        write_string(tostring(value))
+    elseif t == "string"  then
+        write_string(string.format("%q", value))
+    else
+        assert(t == "table")
+        local mt = getmetatable(value)
+        if value == json.null then
+            write_string("null")
+        elseif mt == json.Array or mt ~= json.Object and value[1] ~= nil then
+            impl.format_array(value, write_string)
+        else
+            impl.format_object(value, write_string)
+        end
+    end
+end
+
+function impl.format_array(arr, write_string)
+    write_string("[")
+    for i, value in ipairs(arr) do
+        if i >= 2 then
+            write_string(", ")
+        end
+        impl.format_value(value, write_string)
+    end
+    write_string("]")
+end
+
+function impl.format_object(obj, write_string)
+    write_string("{")
+    local names = {}
+    for name, _ in pairs(obj) do
+        table.insert(names, name)
+    end
+    table.sort(names)
+    for i, name in ipairs(names) do
+        if i >= 2 then
+            write_string(", ")
+        end
+        impl.format_value(name, write_string)
+        write_string(": ")
+        impl.format_value(obj[name], write_string)
+    end
+    write_string("}")
+end
+
 function json.parse(str)
     local pos = 1
     local function peek_char()
@@ -232,10 +282,10 @@ end
 
 function json.format(val)
     local buffer = {}
-    local function write_char(char)
-        table.insert(buffer, char)
+    local function write_string(str)
+        table.insert(buffer, str)
     end
-    impl.format_value(val, write_char)
+    impl.format_value(val, write_string)
     return table.concat(buffer)
 end
 
