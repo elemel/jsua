@@ -60,16 +60,27 @@ local function test_format_array()
     assert(json.format({2, 3, 5}) == "[2, 3, 5]")
 end
 
-local function test_format_object()
-    assert(json.format({the = 2, dude = 3, abides = 5}) ==
-           '{"abides": 5, "dude": 3, "the": 2}')
-end
-
 local function test_format_constant()
     assert(json.format(true) == "true")
     assert(json.format(false) == "false")
     assert(json.format(nil) == "null")
     assert(json.format(json.null) == "null")
+end
+
+local function test_format_number()
+    assert(json.format(0) == "0")
+    assert(json.format(-1) == "-1")
+    assert(json.format(42) == "42")
+    assert(json.format(3.14) == "3.14")
+end
+
+local function test_format_object()
+    assert(json.format({the = 2, dude = 3, abides = 5}) ==
+           '{"abides": 5, "dude": 3, "the": 2}')
+end
+
+local function test_format_string()
+    assert(json.format("The Dude abides.") == '"The Dude abides."')
 end
 
 local function test()
@@ -81,7 +92,9 @@ local function test()
     test_skip_comment()
     test_format_array()
     test_format_constant()
+    test_format_number()
     test_format_object()
+    test_format_string()
 end
 
 test()
