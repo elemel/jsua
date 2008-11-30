@@ -21,8 +21,7 @@
 -- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 -- OTHER DEALINGS IN THE SOFTWARE.
 
-local json = {
-}
+local json = {}
 
 json.Object = {}
 json.Array = {}
@@ -41,30 +40,30 @@ function impl.is_whitespace_char(char)
     return string.find(" \n\r\t", char, 1, true) ~= nil
 end
 
-function impl.parse(peek_char, read_char)
+function impl.read(peek_char, read_char)
     impl.skip_whitespace(peek_char, read_char)
-    local value = impl.parse_value(peek_char, read_char)
+    local value = impl.read_value(peek_char, read_char)
     impl.skip_whitespace(peek_char, read_char)
     assert(not peek_char())
     return value
 end
 
-function impl.parse_value(peek_char, read_char)
+function impl.read_value(peek_char, read_char)
     local char = peek_char()
     if char == "\"" then
-        return impl.parse_string(peek_char, read_char)
+        return impl.read_string(peek_char, read_char)
     elseif impl.is_number_char(char) then
-        return impl.parse_number(peek_char, read_char)
+        return impl.read_number(peek_char, read_char)
     elseif char == "{" then
-        return impl.parse_object(peek_char, read_char)
+        return impl.read_object(peek_char, read_char)
     elseif char == "[" then
-        return impl.parse_array(peek_char, read_char)
+        return impl.read_array(peek_char, read_char)
     elseif char == "t" then
-        return impl.parse_constant(peek_char, read_char, "true", true)
+        return impl.read_constant(peek_char, read_char, "true", true)
     elseif char == "f" then
-        return impl.parse_constant(peek_char, read_char, "false", false)
+        return impl.read_constant(peek_char, read_char, "false", false)
     elseif char == "n" then
-        return impl.parse_constant(peek_char, read_char, "null", json.null)
+        return impl.read_constant(peek_char, read_char, "null", json.null)
     else
         assert(false)
     end
@@ -112,7 +111,7 @@ function impl.skip_comment(peek_char, read_char)
     end
 end
 
-function impl.parse_string(peek_char, read_char)
+function impl.read_string(peek_char, read_char)
     local buffer = {}
     local char = read_char()
     assert(char == "\"")
@@ -138,7 +137,7 @@ function impl.parse_string(peek_char, read_char)
     return table.concat(buffer)
 end
 
-function impl.parse_number(peek_char, read_char)
+function impl.read_number(peek_char, read_char)
     local buffer = {}
     while peek_char() and impl.is_number_char(peek_char()) do
         table.insert(buffer, read_char())
@@ -146,7 +145,7 @@ function impl.parse_number(peek_char, read_char)
     return tonumber(table.concat(buffer))
 end
 
-function impl.parse_object(peek_char, read_char)
+function impl.read_object(peek_char, read_char)
     local obj = {}
     setmetatable(obj, json.Object)
     local char = read_char()
@@ -159,12 +158,12 @@ function impl.parse_object(peek_char, read_char)
             read_char()
             break
         end
-        local name = impl.parse_value(peek_char, read_char)
+        local name = impl.read_value(peek_char, read_char)
         impl.skip_whitespace(peek_char, read_char)
         local char = read_char()
         assert(char == ":")
         impl.skip_whitespace(peek_char, read_char)
-        local value = impl.parse_value(peek_char, read_char)
+        local value = impl.read_value(peek_char, read_char)
         obj[name] = value
         char = read_char()
         if char == "}" then
@@ -175,7 +174,7 @@ function impl.parse_object(peek_char, read_char)
     return obj
 end
 
-function impl.parse_array(peek_char, read_char)
+function impl.read_array(peek_char, read_char)
     local arr = {}
     setmetatable(arr, json.Array)
     local char = read_char()
@@ -188,7 +187,7 @@ function impl.parse_array(peek_char, read_char)
             read_char()
             break
         end
-        table.insert(arr, impl.parse_value(peek_char, read_char))
+        table.insert(arr, impl.read_value(peek_char, read_char))
         impl.skip_whitespace(peek_char, read_char)
         char = read_char()
         assert(char)
@@ -200,7 +199,7 @@ function impl.parse_array(peek_char, read_char)
     return arr
 end
 
-function impl.parse_constant(peek_char, read_char, name, value)
+function impl.read_constant(peek_char, read_char, name, value)
     local i = 1
     while i <= #name do
         local char = read_char()
@@ -210,7 +209,7 @@ function impl.parse_constant(peek_char, read_char, name, value)
     return value
 end
 
-function impl.format_value(value, write_string)
+function impl.write_value(value, write_string)
     local t = type(value)
     if t == "nil" then
         write_string("null")
@@ -224,25 +223,25 @@ function impl.format_value(value, write_string)
         if value == json.null then
             write_string("null")
         elseif mt == json.Array or mt ~= json.Object and value[1] ~= nil then
-            impl.format_array(value, write_string)
+            impl.write_array(value, write_string)
         else
-            impl.format_object(value, write_string)
+            impl.write_object(value, write_string)
         end
     end
 end
 
-function impl.format_array(arr, write_string)
+function impl.write_array(arr, write_string)
     write_string("[")
     for i, value in ipairs(arr) do
         if i >= 2 then
             write_string(", ")
         end
-        impl.format_value(value, write_string)
+        impl.write_value(value, write_string)
     end
     write_string("]")
 end
 
-function impl.format_object(obj, write_string)
+function impl.write_object(obj, write_string)
     write_string("{")
     local names = {}
     for name, _ in pairs(obj) do
@@ -253,14 +252,14 @@ function impl.format_object(obj, write_string)
         if i >= 2 then
             write_string(", ")
         end
-        impl.format_value(name, write_string)
+        impl.write_value(name, write_string)
         write_string(": ")
-        impl.format_value(obj[name], write_string)
+        impl.write_value(obj[name], write_string)
     end
     write_string("}")
 end
 
-function json.parse(str)
+function json.read(str)
     local pos = 1
     local function peek_char()
         return pos <= #str and string.sub(str, pos, pos) or nil
@@ -271,21 +270,21 @@ function json.parse(str)
         return char
     end
     if true then
-        return impl.parse(peek_char, read_char)
+        return impl.read(peek_char, read_char)
     end
-    local success, result = pcall(impl.parse, peek_char, read_char)
+    local success, result = pcall(impl.read, peek_char, read_char)
     if not success then
-        error("JSON parse error at character " .. pos)
+        error("syntax error at character " .. pos)
     end
     return result
 end
 
-function json.format(val)
+function json.write(val)
     local buffer = {}
     local function write_string(str)
         table.insert(buffer, str)
     end
-    impl.format_value(val, write_string)
+    impl.write_value(val, write_string)
     return table.concat(buffer)
 end
 
