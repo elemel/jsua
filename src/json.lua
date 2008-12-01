@@ -23,11 +23,12 @@
 
 local json = {}
 
-json.Object = {}
-json.Array = {}
 json.null = {}
 
 local impl = {}
+
+impl.array = {}
+impl.object = {}
 
 local escapes = {["\""] = "\"", ["\\"] = "\\", ["/"] = "/", b = "\b",
                  f = "\f", n = "\n", r = "\r", t = "\t"}
@@ -176,7 +177,7 @@ end
 
 function impl.read_array(peek_char, read_char)
     local arr = {}
-    setmetatable(arr, json.Array)
+    setmetatable(arr, impl.array)
     local char = read_char()
     assert(char == "[")
     while true do
@@ -222,7 +223,7 @@ function impl.write_value(value, write_string)
         local mt = getmetatable(value)
         if value == json.null then
             write_string("null")
-        elseif mt == json.Array or mt ~= json.Object and value[1] ~= nil then
+        elseif mt == impl.array or mt ~= impl.object and value[1] ~= nil then
             impl.write_array(value, write_string)
         else
             impl.write_object(value, write_string)
@@ -257,6 +258,38 @@ function impl.write_object(obj, write_string)
         impl.write_value(obj[name], write_string)
     end
     write_string("}")
+end
+
+function json.new_array(arr)
+    arr = arr or {}
+    setmetatable(arr, impl.array)
+    return arr
+end
+
+function json.new_object(obj)
+    obj = obj or {}
+    setmetatable(obj, impl.object)
+    return obj
+end
+
+function json.is_array(value)
+    if type(value) ~= "table" or value == json.null then
+        return false
+    end
+    local mt = getmetatable(value)
+    return mt == impl.array or mt ~= impl.object and value[1] ~= nil
+end
+
+function json.is_null(value)
+    return value == nil or value == json.null
+end
+
+function json.is_object(value)
+    if type(value) ~= "table" or value == json.null then
+        return false
+    end
+    local mt = getmetatable(value)
+    return mt == impl.object or value[1] == nil
 end
 
 function json.read(str)

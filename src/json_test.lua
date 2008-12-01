@@ -1,10 +1,31 @@
+-- Copyright (c) 2008 Mikael Lind
+-- 
+-- Permission is hereby granted, free of charge, to any person
+-- obtaining a copy of this software and associated documentation
+-- files (the "Software"), to deal in the Software without
+-- restriction, including without limitation the rights to use,
+-- copy, modify, merge, publish, distribute, sublicense, and/or sell
+-- copies of the Software, and to permit persons to whom the
+-- Software is furnished to do so, subject to the following
+-- conditions:
+-- 
+-- The above copyright notice and this permission notice shall be
+-- included in all copies or substantial portions of the Software.
+-- 
+-- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+-- EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+-- OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+-- NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+-- HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+-- WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+-- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+-- OTHER DEALINGS IN THE SOFTWARE.
+
 local json = require("json")
 
 local function test_read_array()
     local arr = json.read("[]")
-    assert(type(arr) == "table")
-    assert(json.Array and getmetatable(arr) == json.Array)
-    assert(#arr == 0)
+    assert(json.is_array(arr))
 
     local arr = json.read("[2,3,5]")
     assert(#arr == 3)
@@ -26,9 +47,7 @@ end
 
 local function test_read_object()
     local obj = json.read("{}")
-    assert(type(obj) == "table")
-    assert(json.Object and getmetatable(obj) == json.Object)
-    assert(#obj == 0)
+    assert(json.is_object(obj))
     
     local obj = json.read('{"the":true,"dude":false,"abides":null}')
     assert(obj.the == true)
