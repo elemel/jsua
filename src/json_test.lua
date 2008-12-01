@@ -37,7 +37,7 @@ end
 local function test_read_constant()
     assert(json.read("true") == true)
     assert(json.read("false") == false)
-    assert(json.null and json.read("null") == json.null)
+    assert(json.read("null") == json.null)
 end
 
 local function test_read_number()

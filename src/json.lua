@@ -147,8 +147,7 @@ function impl.read_number(peek_char, read_char)
 end
 
 function impl.read_object(peek_char, read_char)
-    local obj = {}
-    setmetatable(obj, json.Object)
+    local obj = json.new_object()
     local char = read_char()
     assert(char == "{")
     while true do
@@ -176,8 +175,7 @@ function impl.read_object(peek_char, read_char)
 end
 
 function impl.read_array(peek_char, read_char)
-    local arr = {}
-    setmetatable(arr, impl.array)
+    local arr = json.new_array()
     local char = read_char()
     assert(char == "[")
     while true do
@@ -211,23 +209,20 @@ function impl.read_constant(peek_char, read_char, name, value)
 end
 
 function impl.write_value(value, write_string)
-    local t = type(value)
-    if t == "nil" then
-        write_string("null")
-    elseif t == "boolean" or t == "number" then
-        write_string(tostring(value))
-    elseif t == "string"  then
+    if type(value) == "string" then
         write_string(string.format("%q", value))
+    elseif type(value) == "number" then
+        write_string(tostring(value))
+    elseif json.is_array(value) then
+        impl.write_array(value, write_string)
+    elseif json.is_object(value) then
+        impl.write_object(value, write_string)
+    elseif type(value) == "boolean" then
+        write_string(tostring(value))
+    elseif json.is_null(value) then
+        write_string("null")
     else
-        assert(t == "table")
-        local mt = getmetatable(value)
-        if value == json.null then
-            write_string("null")
-        elseif mt == impl.array or mt ~= impl.object and value[1] ~= nil then
-            impl.write_array(value, write_string)
-        else
-            impl.write_object(value, write_string)
-        end
+        assert(false)
     end
 end
 
@@ -301,9 +296,6 @@ function json.read(str)
         local char = peek_char()
         pos = pos + 1
         return char
-    end
-    if true then
-        return impl.read(peek_char, read_char)
     end
     local success, result = pcall(impl.read, peek_char, read_char)
     if not success then
