@@ -158,13 +158,13 @@ function impl.read_object(peek_char, read_char)
             read_char()
             break
         end
-        local name = impl.read_value(peek_char, read_char)
+        local key = impl.read_value(peek_char, read_char)
         impl.skip_whitespace(peek_char, read_char)
         local char = read_char()
         assert(char == ":")
         impl.skip_whitespace(peek_char, read_char)
         local value = impl.read_value(peek_char, read_char)
-        obj[name] = value
+        obj[key] = value
         char = read_char()
         if char == "}" then
             break
@@ -239,18 +239,18 @@ end
 
 function impl.write_object(obj, write_string)
     write_string("{")
-    local names = {}
-    for name, _ in pairs(obj) do
-        table.insert(names, name)
+    local keys = {}
+    for key, _ in pairs(obj) do
+        table.insert(keys, key)
     end
-    table.sort(names)
-    for i, name in ipairs(names) do
+    table.sort(keys)
+    for i, key in ipairs(keys) do
         if i >= 2 then
             write_string(", ")
         end
-        impl.write_value(name, write_string)
+        impl.write_value(key, write_string)
         write_string(": ")
-        impl.write_value(obj[name], write_string)
+        impl.write_value(obj[key], write_string)
     end
     write_string("}")
 end
