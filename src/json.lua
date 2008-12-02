@@ -268,11 +268,10 @@ function json.new_object(obj)
 end
 
 function json.is_array(value)
-    if type(value) ~= "table" or value == json.null then
-        return false
-    end
+    local t = type(value)
     local mt = getmetatable(value)
-    return mt == impl.array or mt ~= impl.object and value[1] ~= nil
+    return t == "table" and value ~= json.null and
+            (mt == impl.array or mt == nil and value[1] ~= nil)
 end
 
 function json.is_null(value)
@@ -280,11 +279,10 @@ function json.is_null(value)
 end
 
 function json.is_object(value)
-    if type(value) ~= "table" or value == json.null then
-        return false
-    end
+    local t = type(value)
     local mt = getmetatable(value)
-    return mt == impl.object or value[1] == nil
+    return t == "table" and value ~= json.null and
+            (mt == impl.object or mt == nil and value[1] == nil)
 end
 
 function json.read(str)
