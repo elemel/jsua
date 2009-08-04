@@ -135,6 +135,7 @@ function impl.read_string(peek_char, read_char)
             table.insert(buffer, char)
         end
     end
+    impl.skip_whitespace(peek_char, read_char)
     return table.concat(buffer)
 end
 
@@ -143,6 +144,7 @@ function impl.read_number(peek_char, read_char)
     while peek_char() and impl.is_number_char(peek_char()) do
         table.insert(buffer, read_char())
     end
+    impl.skip_whitespace(peek_char, read_char)
     return tonumber(table.concat(buffer))
 end
 
@@ -171,6 +173,7 @@ function impl.read_object(peek_char, read_char)
         end
         assert(char == ",")
     end
+    impl.skip_whitespace(peek_char, read_char)
     return obj
 end
 
@@ -195,6 +198,7 @@ function impl.read_array(peek_char, read_char)
         end
         assert(char == ",")
     end
+    impl.skip_whitespace(peek_char, read_char)
     return arr
 end
 
@@ -205,6 +209,7 @@ function impl.read_constant(peek_char, read_char, name, value)
         assert(char == string.sub(name, i, i))
         i = i + 1
     end
+    impl.skip_whitespace(peek_char, read_char)
     return value
 end
 
