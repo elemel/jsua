@@ -1,1 +1,3 @@
-Contributors: Herwig Habenbacher, Mikael Lind
+Maintainer: Mikael Lind <elemel@elemel.se>
+
+Contributors: Herwig Habenbacher

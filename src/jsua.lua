@@ -1,29 +1,6 @@
--- Copyright (c) 2008 Mikael Lind
--- 
--- Permission is hereby granted, free of charge, to any person
--- obtaining a copy of this software and associated documentation
--- files (the "Software"), to deal in the Software without
--- restriction, including without limitation the rights to use,
--- copy, modify, merge, publish, distribute, sublicense, and/or sell
--- copies of the Software, and to permit persons to whom the
--- Software is furnished to do so, subject to the following
--- conditions:
--- 
--- The above copyright notice and this permission notice shall be
--- included in all copies or substantial portions of the Software.
--- 
--- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
--- EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
--- OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
--- NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
--- HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
--- WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
--- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
--- OTHER DEALINGS IN THE SOFTWARE.
+local jsua = {}
 
-local json = {}
-
-json.null = {}
+jsua.null = {}
 
 local impl = {}
 
@@ -64,7 +41,7 @@ function impl.read_value(peek_char, read_char)
     elseif char == "f" then
         return impl.read_constant(peek_char, read_char, "false", false)
     elseif char == "n" then
-        return impl.read_constant(peek_char, read_char, "null", json.null)
+        return impl.read_constant(peek_char, read_char, "null", jsua.null)
     else
         assert(false)
     end
@@ -149,7 +126,7 @@ function impl.read_number(peek_char, read_char)
 end
 
 function impl.read_object(peek_char, read_char)
-    local obj = json.new_object()
+    local obj = jsua.new_object()
     local char = read_char()
     assert(char == "{")
     while true do
@@ -178,7 +155,7 @@ function impl.read_object(peek_char, read_char)
 end
 
 function impl.read_array(peek_char, read_char)
-    local arr = json.new_array()
+    local arr = jsua.new_array()
     local char = read_char()
     assert(char == "[")
     while true do
@@ -218,13 +195,13 @@ function impl.write_value(value, write_string)
         write_string(string.format("%q", value))
     elseif type(value) == "number" then
         write_string(tostring(value))
-    elseif json.is_array(value) then
+    elseif jsua.is_array(value) then
         impl.write_array(value, write_string)
-    elseif json.is_object(value) then
+    elseif jsua.is_object(value) then
         impl.write_object(value, write_string)
     elseif type(value) == "boolean" then
         write_string(tostring(value))
-    elseif json.is_null(value) then
+    elseif jsua.is_null(value) then
         write_string("null")
     else
         assert(false)
@@ -260,37 +237,37 @@ function impl.write_object(obj, write_string)
     write_string("}")
 end
 
-function json.new_array(arr)
+function jsua.new_array(arr)
     arr = arr or {}
     setmetatable(arr, impl.array)
     return arr
 end
 
-function json.new_object(obj)
+function jsua.new_object(obj)
     obj = obj or {}
     setmetatable(obj, impl.object)
     return obj
 end
 
-function json.is_array(value)
+function jsua.is_array(value)
     local t = type(value)
     local mt = getmetatable(value)
-    return t == "table" and value ~= json.null and
+    return t == "table" and value ~= jsua.null and
             (mt == impl.array or mt == nil and value[1] ~= nil)
 end
 
-function json.is_null(value)
-    return value == nil or value == json.null
+function jsua.is_null(value)
+    return value == nil or value == jsua.null
 end
 
-function json.is_object(value)
+function jsua.is_object(value)
     local t = type(value)
     local mt = getmetatable(value)
-    return t == "table" and value ~= json.null and
+    return t == "table" and value ~= jsua.null and
             (mt == impl.object or mt == nil and value[1] == nil)
 end
 
-function json.read(str)
+function jsua.read(str)
     local pos = 1
     local function peek_char()
         return pos <= #str and string.sub(str, pos, pos) or nil
@@ -307,7 +284,7 @@ function json.read(str)
     return result
 end
 
-function json.write(val)
+function jsua.write(val)
     local buffer = {}
     local function write_string(str)
         table.insert(buffer, str)
@@ -316,4 +293,4 @@ function json.write(val)
     return table.concat(buffer)
 end
 
-return json
+return jsua
